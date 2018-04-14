@@ -1,0 +1,91 @@
+Ví dụ này sẽ tìm hiểu về FlatMap và ConcatMap với vị dụ bán vé máy bay.
+- Tìm hiểu cách sử dụng Single Observable với nhiều Observer bằng cách sử dụng
+hàm replay().
+- Tìm hiểu về cách sử dụng thư viện Retrofit
+1. Điều kiện tiên quyết:
+- Hiểu được Map, FlatMap,SwitchMap,ConcatMap. Có nhiều toán tử Map trong RxJava ta cần hiểu
+được sự khác biệt giữa chúng. Chúng ta sẽ tìm hiểu từng loại và tập trung vào Map, ConcatMap,
+FlatMap.
+- Hiểu được Observables của RxJava để hiểu được sự khác nhau giữa các loại Observable.
+- Retrofit: Cơ bản về việc sử dụng thư viện Retrofit.
+- Butterknife: Binding các view, thêm phụ thuộc.
+- RecyclerView và CardView và cách kết hợp giữa chúng.
+
+2. Ý tưởng
+- Nội dung chính của ví dụ này là việc kết hợp các kiến thức về Map, FlatMap, ConcatMap,và
+thư viện làm việc với network. Chúng ta sẽ giới thiệu về replay() để giải quyết các vấn
+đề Single Observable và multi Observers.
+- Trong ví dụ về bán vé máy bay ta cần tạo nhiều cuộc gọi HTTP phụ thuộc để hiển thị
+kết quả lên màn hình. Đầu tiên tất cả các vé sẽ được lấy về thông qua việc HTTP duy nhất
+trừ giá và chỗ ngồi có sẵn. Gía vé và chỗ ngồi thực tế sẽ được lấy riêng cho mỗi vé.
+- Chúng ta có 20 vé có sẵn, tất cả 20 vé sẽ được lấy về trong cuộc gọi HTTP đầu tiên.
+20 cuộc gọi tiếp theo sẽ được gọi song song để lấy về giá vé và chỗ ngồi.
+
+2.1 Single Observable - Multiple Subscribers.
+Trong RxJava kịch bản xây dựng ở trên ta có thể sử dụng Single Observable và multi Observers
+(Subscriber)
+- Single Observable: Đầu tiên ta cần tạo ra 1 Observable để phát ra danh sách các ticket.
+Công việc của Observable này là nạp chuỗi json ticket chỉ duy nhất 1 lần và phát ra dữ liệu
+là các item.
+- Multiple Observers: Observer đầu tiên lấy về danh sách các vé và render data hiển thị
+lên recyclerview chi tiết của vé trừ giá và ghế ngồi. Observer thứ 2 chuyển đổi danh sách
+Observable thành 1 Observable. Mỗi lần phát ra 1 vé một cuộc gọi HTTP được thực hiện để
+lấy giá và chỗ ngồi của vé.
+- Chúng ta sử dụng phương thức replay() để tạo ra một Observable Shared nghĩa là nó sẽ
+bắt đầu phát ra dữ liệu trong 1 đăng ký mới mà không thực hiện lại toàn bộ logic(HTTP call)
+lần nữa.
+
+3. REST API
+Link api lấy về danh sách vé.
+https://api.androidhive.info/json/airline-tickets.php?from=DEL&to=CHE
+Link lấy về chi tiết của giá vé, ghế ngồi của vé
+https://api.androidhive.info/json/airline-tickets-price.php?flight_number=6E-ARIfrom=DEL&to=CHE
+
+4. Tạo Project
+Các công việc chính ta cần làm là:
+- Thiết lập các cơ bản cho App.
+- Add thư viện Retrofit.
+- Thêm các interface chính(Lắng nghe tickets FlatMap)
+- Lắng nghe Ticket sử dụng ConcatMap.
+1. Tạo project.
+2. Mở build.gradle level project ta thêm jitpack để sử dụng thư viện Spinkit.
+3. Add các thư viện vào trong buidl.gradle level app: recyclerview, cardview, ButterKnife,
+Spinkit và Retrofit rồi Sync project.
+4. Add các giá trị quy định màu sắc, kích thước, các chuỗi vào các file colors.xml,
+dimens.xml, strings.xml.
+5. Cấp quyền INTERNET trong AndroidManifest.xml
+6. Tạo package app. Trong app tạo 1 class là Const.java định nghĩa các đường dẫn api
+7. Tạo package network nơi chứa các package model lấy từ network, và các apiservice.
+3 Class trong model để lấy dữ liệu từ JSON. Airline, Ticket, Price. Ticket model phụ thuộc
+cả vào Airline và Price.
+- Tạo class ApiClient để cấu hình instance của Retrofit
+    - Tạo đối tượng instance của retrofit.
+    - Tạo biến REQUEST_TIMEOUT quy định thời gian connect network.
+    - Tạo biến đối tượng OkHttpClient.
+
+    //Cấu hình retrofit và OkHttpClient.
+- Tạo interface ApiService các phương thức lấy data từ server
+ + Lấy ra thông tin danh sách vé được truy vấn theo đường bay
+ + Lấy ra thông tin của giá theo mã đường bay
+8. Tạo item_row hiển thị thông tin của vé
+9. Tạo TicketAdapter, sự kiện click cho item...
+
+10. Vào MainActivity thực hiện hoàn thành code
+- CompositeDisposable được sử dụng để dispose các subscriptions trong onDestroy()
+- getTickets() tạo 1 cuộc gọi HTTP để nạp dữ liệu danh sách tickets.
+- getPriceObservable() tạo 1 cuộc gọi HTTP để lấy về giá và số của vé trên chuyến bay.
+- Có thể sử dụng hàm replay() (getTickets(from,to).replay()) được sử dụng để tạo 1 Observable để
+phát ra data trong một subscription mới mà không cần thực thi lại logic một lần nữa.
+Trong trường hợp này danh sách các tickets sẽ được phát ra mà không cần gọi lại HTTP 1 lần nữa.
+Nếu không có phương thức replay() thì cần phải nạp danh sách tickets bằng cách gọi giao thức HTTP nhiều
+lần.
+- Trong subscription đầu tiên, danh sách ticket được add vào Adapter và recyclerview sẽ được hiển
+thị một cách trực tiếp mà không có giá và số ghế.
+- Trong subscription thứ 2, flatMap() được sử dụng để convert danh sách vé sang mỗi lần phát ra ticket
+riêng lẻ.
+- Trên một Observable tương tự, một flatMap() khác được gắn vào để thực thi phương thức
+ getPriceObservable() khi trên mỗi ticket được phát ra và nạp giá và số ghế.
+- Thông tin giá và số ghế, phần thông tin này sẽ được cập nhật lên recyclerview.
+- Nếu quan sát getPriceObservable(), API gọi nạp Price model. Nhưng toán tử map() được sử dụng để
+chuyển đổi kiểu trả về từ Price thành Ticket.
+- Gọi ticketsObservable() sẽ bắt đầu thực thi Observable.

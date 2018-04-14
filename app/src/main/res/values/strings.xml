@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">RxJavaTicketApp</string>
+    <string name="lbl_price">Price</string>
 </resources>
