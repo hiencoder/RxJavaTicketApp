@@ -1,8 +1,10 @@
 package vn.edu.imic.rxjavaticketapp.view;
 
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
@@ -10,6 +12,8 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.View;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -176,11 +180,16 @@ public class MainActivity extends AppCompatActivity implements TicketListener{
     }
 
     /**
-     * Show ra error
+     * Show ra error tren snackbar
      * @param e
      */
     private void showError(Throwable e) {
-        
+        //Tao snackbar
+        Snackbar snackbar = Snackbar.make(coordinatorLayout,e.getMessage(),Snackbar.LENGTH_SHORT);
+        View sbView = snackbar.getView();
+        TextView tvError = sbView.findViewById(android.support.design.R.id.snackbar_text);
+        tvError.setTextColor(Color.YELLOW);
+        snackbar.show();
     }
 
     /**
@@ -208,4 +217,12 @@ public class MainActivity extends AppCompatActivity implements TicketListener{
         return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, r.getDisplayMetrics()));
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (disposable != null && !disposable.isDisposed()){
+            disposable.dispose();
+        }
+        unbinder.unbind();
+    }
 }
